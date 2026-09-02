@@ -19,7 +19,7 @@ export function DashboardNav() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="flex gap-1 overflow-x-auto border-b bg-background px-2 py-1 md:flex-col md:border-b-0 md:border-r md:px-3 md:py-4"
+      className="flex justify-between gap-1 border-b bg-background px-1 py-1 md:flex-col md:justify-start md:border-b-0 md:border-r md:px-3 md:py-4"
     >
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
         const isActive =
@@ -29,15 +29,17 @@ export function DashboardNav() {
             key={href}
             href={href}
             aria-current={isActive ? "page" : undefined}
+            aria-label={label}
+            title={label}
             className={cn(
-              "flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "flex flex-1 flex-col items-center gap-1 rounded-md px-2 py-2 text-xs font-medium transition-colors md:flex-row md:flex-none md:gap-2 md:px-3 md:text-sm",
               isActive
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            <Icon className="size-4" aria-hidden="true" />
-            {label}
+            <Icon className="size-5 md:size-4" aria-hidden="true" />
+            <span className="max-w-full truncate md:max-w-none">{label}</span>
           </Link>
         );
       })}
