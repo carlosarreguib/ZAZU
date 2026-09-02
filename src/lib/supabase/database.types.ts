@@ -36,6 +36,7 @@ export interface Database {
           email?: string;
           full_name?: string | null;
         };
+        Relationships: [];
       };
       businesses: {
         Row: {
@@ -60,6 +61,7 @@ export interface Database {
           phone?: string | null;
           timezone?: string;
         };
+        Relationships: [];
       };
       business_members: {
         Row: {
@@ -78,6 +80,15 @@ export interface Database {
         Update: {
           role?: BusinessMemberRole;
         };
+        Relationships: [
+          {
+            foreignKeyName: "business_members_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       clients: {
         Row: {
@@ -101,6 +112,15 @@ export interface Database {
           phone?: string;
           notes?: string | null;
         };
+        Relationships: [
+          {
+            foreignKeyName: "clients_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       services: {
         Row: {
@@ -124,6 +144,15 @@ export interface Database {
           duration_minutes?: number;
           active?: boolean;
         };
+        Relationships: [
+          {
+            foreignKeyName: "services_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       appointments: {
         Row: {
@@ -156,6 +185,29 @@ export interface Database {
           status?: AppointmentStatus;
           notes?: string | null;
         };
+        Relationships: [
+          {
+            foreignKeyName: "appointments_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "appointments_service_id_fkey";
+            columns: ["service_id"];
+            isOneToOne: false;
+            referencedRelation: "services";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       appointment_reminders: {
         Row: {
@@ -180,6 +232,15 @@ export interface Database {
           status?: ReminderStatus;
           sent_at?: string | null;
         };
+        Relationships: [
+          {
+            foreignKeyName: "appointment_reminders_appointment_id_fkey";
+            columns: ["appointment_id"];
+            isOneToOne: false;
+            referencedRelation: "appointments";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       business_settings: {
         Row: {
@@ -198,7 +259,29 @@ export interface Database {
           default_reminder_template?: string;
           week_starts_on?: number;
         };
+        Relationships: [
+          {
+            foreignKeyName: "business_settings_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: true;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
+    Views: Record<string, never>;
+    Functions: {
+      is_business_member: {
+        Args: { target_business_id: string };
+        Returns: boolean;
+      };
+      provision_business_for_current_user: {
+        Args: { business_name: string; contact_name: string | null };
+        Returns: string;
+      };
+    };
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }

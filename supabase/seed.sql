@@ -35,6 +35,18 @@ begin
   )
   on conflict (id) do nothing;
 
+  -- GoTrue (Supabase Auth) requiere también una fila en auth.identities para
+  -- el login por email/password; sin ella el usuario existe pero no puede
+  -- autenticarse (comprobado manualmente durante la Fase 3).
+  insert into auth.identities (
+    id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+  ) values (
+    demo_user_id, demo_user_id, demo_user_id::text,
+    jsonb_build_object('sub', demo_user_id::text, 'email', 'demo@zazu.app', 'email_verified', true),
+    'email', now(), now(), now()
+  )
+  on conflict (provider, provider_id) do nothing;
+
   insert into public.profiles (id, email, full_name)
   values (demo_user_id, 'demo@zazu.app', 'Profesional Demo')
   on conflict (id) do nothing;
