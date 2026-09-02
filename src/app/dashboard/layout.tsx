@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { DashboardHeader } from "@/components/layout/dashboard-header";
 import { DashboardNav } from "@/components/layout/dashboard-nav";
 import { requireBusiness } from "@/lib/auth/session";
+
+// El dashboard autenticado no necesita SEO (SPEC.md sección 42).
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 /**
  * La protección de la ruta /dashboard la aplica el proxy (src/proxy.ts) a
