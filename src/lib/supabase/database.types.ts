@@ -45,6 +45,7 @@ export interface Database {
           contact_name: string | null;
           phone: string | null;
           timezone: string;
+          onboarding_completed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -54,12 +55,14 @@ export interface Database {
           contact_name?: string | null;
           phone?: string | null;
           timezone?: string;
+          onboarding_completed_at?: string | null;
         };
         Update: {
           name?: string;
           contact_name?: string | null;
           phone?: string | null;
           timezone?: string;
+          onboarding_completed_at?: string | null;
         };
         Relationships: [];
       };

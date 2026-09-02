@@ -41,7 +41,7 @@ export async function requireBusiness() {
 
   const { data: business, error: businessError } = await supabase
     .from("businesses")
-    .select("id, name, contact_name, phone, timezone")
+    .select("id, name, contact_name, phone, timezone, onboarding_completed_at")
     .eq("id", membership.business_id)
     .single();
 

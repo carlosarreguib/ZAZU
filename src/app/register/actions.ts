@@ -71,8 +71,5 @@ export async function register(
     };
   }
 
-  // El onboarding (SPEC.md sección 10) se implementa en la Fase 4. Hasta
-  // entonces, el usuario recién registrado entra directo al dashboard con el
-  // negocio ya provisionado.
-  redirect("/dashboard");
+  redirect("/onboarding");
 }
