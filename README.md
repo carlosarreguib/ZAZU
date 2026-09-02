@@ -87,9 +87,14 @@ Abre [http://localhost:3000](http://localhost:3000).
 
 ## Tests
 
-Los tests (unit, integración contra Supabase local y E2E de caminos críticos)
-se añaden en la Fase 12 del desarrollo. Esta sección se actualizará con los
-comandos exactos (`npm run test`, etc.) en cuanto existan.
+```bash
+npm run test   # unit tests (Vitest)
+```
+
+Por ahora cubre las funciones puras críticas de WhatsApp (normalización de
+teléfono, generación de mensaje y de URL `wa.me`). El resto de tests (más
+unit tests, integración contra Supabase local y E2E de caminos críticos) se
+completa en la Fase 12 del desarrollo.
 
 Los tests de integración se ejecutarán contra una instancia local real de
 Supabase (no se mockea RLS) para verificar el aislamiento multi-tenant y las

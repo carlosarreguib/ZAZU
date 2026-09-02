@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { formatTime } from "@/lib/dates/format";
 import { APPOINTMENT_STATUS_LABELS } from "@/lib/validations/appointment";
+import { WhatsAppReminderButton } from "@/components/whatsapp/whatsapp-reminder-button";
 
 export type DayAppointmentItem = {
   id: string;
@@ -53,17 +53,10 @@ export function DayAppointments({
             </div>
           </div>
 
-          <div>
-            {appt.reminderStatus === "sent" ? (
-              <span className="text-sm font-medium text-primary">
-                ✓ Recordatorio enviado
-              </span>
-            ) : (
-              <Button variant="outline" size="sm" disabled title="Disponible en la Fase 9">
-                Recordar por WhatsApp
-              </Button>
-            )}
-          </div>
+          <WhatsAppReminderButton
+            appointmentId={appt.id}
+            alreadySent={appt.reminderStatus === "sent"}
+          />
         </li>
       ))}
     </ul>

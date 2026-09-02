@@ -1,8 +1,8 @@
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { NewAppointmentDialog } from "@/components/appointments/new-appointment-dialog";
 import { DashboardSummary } from "@/components/dashboard/dashboard-summary";
 import { DayAppointments, type DayAppointmentItem } from "@/components/dashboard/day-appointments";
+import { ReminderFlow } from "@/components/whatsapp/reminder-flow";
 import { requireBusiness } from "@/lib/auth/session";
 import { dayRangeUtc } from "@/lib/dates/ranges";
 import { formatDateLong } from "@/lib/dates/format";
@@ -121,9 +121,17 @@ export default async function DashboardPage({
               {formatDateLong(tomorrow.startIso, timezone)}
             </h2>
             {tomorrowAppointments.length > 0 ? (
-              <Button variant="outline" size="sm" disabled title="Disponible en la Fase 9">
-                Recordar citas de mañana
-              </Button>
+              <ReminderFlow
+                items={tomorrowAppointments
+                  .filter((a) => a.reminderStatus !== "sent")
+                  .map((a) => ({
+                    id: a.id,
+                    startsAt: a.startsAt,
+                    clientName: a.clientName,
+                    serviceName: a.serviceName,
+                  }))}
+                timezone={timezone}
+              />
             ) : null}
           </div>
           <DayAppointments
