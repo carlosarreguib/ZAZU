@@ -88,17 +88,51 @@ Abre [http://localhost:3000](http://localhost:3000).
 ## Tests
 
 ```bash
-npm run test   # unit tests (Vitest)
+npm run test              # unit tests (Vitest)
+npm run test:integration  # tests de integración (requieren Supabase real)
 ```
 
-Por ahora cubre las funciones puras críticas de WhatsApp (normalización de
-teléfono, generación de mensaje y de URL `wa.me`). El resto de tests (más
-unit tests, integración contra Supabase local y E2E de caminos críticos) se
-completa en la Fase 12 del desarrollo.
+**Unit tests** cubren las funciones puras críticas: normalización de
+teléfono, generación de mensaje y URL de WhatsApp, cálculo de fin de cita a
+partir de la duración, conversión de fecha/hora a UTC respetando el
+timezone del negocio, cálculo del rango "hoy"/"mañana", y las validaciones
+Zod de los formularios principales (registro, cliente, cita). No requieren
+red ni credenciales.
 
-Los tests de integración se ejecutarán contra una instancia local real de
-Supabase (no se mockea RLS) para verificar el aislamiento multi-tenant y las
-policies tal como se comportan en Postgres.
+**Tests de integración** (`src/**/*.integration.test.ts`) prueban los
+caminos críticos contra una instancia real de Postgres/Supabase — nunca se
+mockea RLS, siguiendo la filosofía del proyecto de probar la seguridad tal
+como se comporta la base de datos: crear cliente, crear cita, el
+constraint `EXCLUDE` anti-solapamiento (verificando el código de error real
+`23P01`, no solo la validación de aplicación), y aislamiento multi-tenant
+completo (SELECT/INSERT/UPDATE bloqueados entre negocios). Cada ejecución
+crea usuarios y negocios de prueba reales vía la Admin API y los borra al
+terminar (`afterAll`).
+
+Requieren `.env.local` con `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` apuntando a
+una instancia de Supabase real:
+
+- **Local (recomendado si tienes Docker):** `npx supabase start` y apunta
+  las variables anteriores a `http://127.0.0.1:54321` y a las claves que
+  imprime ese comando.
+- **Remoto:** si no tienes Docker disponible, pueden apuntar a un proyecto
+  Supabase real de desarrollo/staging — nunca a producción, ya que estos
+  tests crean y borran datos.
+
+**E2E** (Playwright) cubre el camino crítico completo de principio a fin:
+
+```bash
+npx playwright install chromium   # solo la primera vez
+npm run test:e2e
+```
+
+Levanta automáticamente un servidor de desarrollo en `localhost:3100` y
+recorre: registro → onboarding de 3 pasos → crear cliente (inline, durante
+la creación de la cita) → crear cita → la cita aparece en la vista "Hoy" →
+abrir el recordatorio de WhatsApp (verifica el número y el mensaje en la
+URL `wa.me`) → marcar el recordatorio como enviado. Igual que los tests de
+integración, necesita `.env.local` con credenciales de Supabase reales.
 
 ## Deploy en Vercel
 

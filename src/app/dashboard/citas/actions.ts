@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireBusiness } from "@/lib/auth/session";
-import { zonedDateTimeToIso } from "@/lib/dates/timezone";
+import { zonedDateTimeToIso, addMinutesIso } from "@/lib/dates/timezone";
 import {
   appointmentSchema,
   appointmentStatusSchema,
@@ -56,9 +56,7 @@ export async function createAppointment(
   const { clientId, serviceId, date, time, durationMinutes, notes } = parsed.data;
 
   const startsAt = zonedDateTimeToIso(date, time, timezone);
-  const endsAt = new Date(
-    new Date(startsAt).getTime() + durationMinutes * 60_000,
-  ).toISOString();
+  const endsAt = addMinutesIso(startsAt, durationMinutes);
 
   // Validación de aplicación para dar feedback amigable de inmediato
   // (SPEC.md sección 20); el EXCLUDE constraint de la BD es la garantía
@@ -133,9 +131,7 @@ export async function updateAppointment(
   const { clientId, serviceId, date, time, durationMinutes, notes } = parsed.data;
 
   const startsAt = zonedDateTimeToIso(date, time, timezone);
-  const endsAt = new Date(
-    new Date(startsAt).getTime() + durationMinutes * 60_000,
-  ).toISOString();
+  const endsAt = addMinutesIso(startsAt, durationMinutes);
 
   const { count: overlapCount } = await supabase
     .from("appointments")

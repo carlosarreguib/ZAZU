@@ -14,3 +14,14 @@ export function zonedDateTimeToIso(
   const localDateTime = `${date}T${time}:00`;
   return fromZonedTime(localDateTime, timezone).toISOString();
 }
+
+/**
+ * Calcula el instante de fin de una cita a partir de su inicio (ISO) y su
+ * duración en minutos. Función pura extraída de las Server Actions de citas
+ * para poder testearla de forma aislada (SPEC.md sección 43).
+ */
+export function addMinutesIso(startsAtIso: string, durationMinutes: number): string {
+  return new Date(
+    new Date(startsAtIso).getTime() + durationMinutes * 60_000,
+  ).toISOString();
+}
