@@ -144,6 +144,63 @@ export async function updateClient(
   redirect(`/dashboard/clientes/${clientId}`);
 }
 
+export type CreateClientInlineResult = {
+  error?: string;
+  duplicateClientId?: string;
+  duplicateClientName?: string;
+  clientId?: string;
+};
+
+/**
+ * Igual que createClient, pero pensada para el flujo "crear cliente durante
+ * la cita" (SPEC.md sección 19): devuelve el id en vez de redirigir, para
+ * que el formulario de la cita pueda seleccionarlo sin salir del modal.
+ */
+export async function createClientInline(
+  fullName: string,
+  phone: string,
+  forceCreate = false,
+): Promise<CreateClientInlineResult> {
+  const parsed = clientSchema.safeParse({ fullName, phone });
+  if (!parsed.success) {
+    return { error: "Nombre o teléfono no válidos." };
+  }
+
+  const { supabase, businessId } = await requireBusiness();
+
+  if (!forceCreate) {
+    const duplicate = await findDuplicateByPhone(
+      supabase,
+      businessId,
+      parsed.data.phone,
+    );
+    if (duplicate) {
+      return {
+        error: `Ya existe un cliente con ese teléfono: ${duplicate.full_name}.`,
+        duplicateClientId: duplicate.id,
+        duplicateClientName: duplicate.full_name,
+      };
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("clients")
+    .insert({
+      business_id: businessId,
+      full_name: parsed.data.fullName,
+      phone: parsed.data.phone,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    return { error: "No se pudo crear el cliente. Inténtalo de nuevo." };
+  }
+
+  revalidatePath("/dashboard/clientes");
+  return { clientId: data.id };
+}
+
 export type DeleteClientResult = { error?: string; success?: boolean };
 
 /**
