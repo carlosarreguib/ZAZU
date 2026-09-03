@@ -34,6 +34,8 @@ export function AppointmentsCalendar({
         onSelect={(date) => date && setSelected(date)}
         modifiers={{ hasAppointments: daysWithAppointments }}
         modifiersClassNames={{ hasAppointments: "font-bold underline" }}
+        className="w-full sm:w-auto sm:shrink-0 sm:basis-1/3 [--cell-size:--spacing(11)]"
+        classNames={{ root: "w-full", month: "w-full" }}
       />
       <div className="flex flex-1 flex-col gap-3">
         <h2 className="text-sm font-medium text-muted-foreground">
