@@ -113,6 +113,11 @@ export async function updateBusinessHours(
   if (!parsed.success) {
     const fieldErrors: Record<number, { startsAt?: string; endsAt?: string }> = {};
     for (const issue of parsed.error.issues) {
+      // dayIndex es la posición dentro del array "days" enviado, no el
+      // day_of_week. Ambos coinciden hoy porque WorkingHoursForm siempre
+      // construye/preserva el array en orden 0..6 sin reordenar ni
+      // filtrar filas — si eso cambia, esta clave dejará de alinear con
+      // el `state.fieldErrors?.[dayOfWeek]` que lee working-hours-form.tsx.
       const dayIndex = issue.path[1];
       const field = issue.path[2];
       if (typeof dayIndex !== "number") continue;
