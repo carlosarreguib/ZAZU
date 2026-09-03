@@ -93,6 +93,40 @@ export interface Database {
           },
         ];
       };
+      business_hours: {
+        Row: {
+          id: string;
+          business_id: string;
+          day_of_week: number;
+          is_open: boolean;
+          starts_at: string | null;
+          ends_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          business_id: string;
+          day_of_week: number;
+          is_open?: boolean;
+          starts_at?: string | null;
+          ends_at?: string | null;
+        };
+        Update: {
+          is_open?: boolean;
+          starts_at?: string | null;
+          ends_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "business_hours_business_id_fkey";
+            columns: ["business_id"];
+            isOneToOne: false;
+            referencedRelation: "businesses";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       clients: {
         Row: {
           id: string;
