@@ -33,14 +33,14 @@ describe("flujos críticos (integración)", () => {
       .from("clients")
       .insert({
         business_id: businessAId,
-        full_name: "Cliente Integración",
+        first_name: "Cliente Integración",
         phone: "+34600111222",
       })
-      .select("id, full_name")
+      .select("id, first_name")
       .single();
 
     expect(error).toBeNull();
-    expect(data?.full_name).toBe("Cliente Integración");
+    expect(data?.first_name).toBe("Cliente Integración");
   });
 
   it("crea una cita correctamente", async () => {
@@ -89,13 +89,13 @@ describe("flujos críticos (integración)", () => {
   it("aísla los datos entre negocios: A no ve clientes de B", async () => {
     await userB.client.from("clients").insert({
       business_id: businessBId,
-      full_name: "Cliente de B",
+      first_name: "Cliente de B",
       phone: "+34600999888",
     });
 
     const { data } = await userA.client
       .from("clients")
-      .select("full_name")
+      .select("first_name")
       .eq("business_id", businessBId);
 
     expect(data).toEqual([]);
@@ -104,7 +104,7 @@ describe("flujos críticos (integración)", () => {
   it("aísla los datos entre negocios: A no puede insertar en el negocio de B", async () => {
     const { error } = await userA.client.from("clients").insert({
       business_id: businessBId,
-      full_name: "Cliente intruso",
+      first_name: "Cliente intruso",
       phone: "+34600000000",
     });
 
@@ -121,16 +121,16 @@ describe("flujos críticos (integración)", () => {
 
     await userA.client
       .from("clients")
-      .update({ full_name: "Hackeado" })
+      .update({ first_name: "Hackeado" })
       .eq("id", clientB!.id);
 
     const { data: stillIntact } = await userB.client
       .from("clients")
-      .select("full_name")
+      .select("first_name")
       .eq("id", clientB!.id)
       .single();
 
-    expect(stillIntact?.full_name).not.toBe("Hackeado");
+    expect(stillIntact?.first_name).not.toBe("Hackeado");
   });
 
   it("bloquea eliminar un cliente con citas futuras activas (regla de aplicación)", async () => {

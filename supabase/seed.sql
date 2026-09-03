@@ -67,11 +67,11 @@ begin
   values (service_fisio_id, demo_business_id, 'Fisioterapia', 50, true)
   on conflict (id) do nothing;
 
-  insert into public.clients (id, business_id, full_name, phone, notes)
+  insert into public.clients (id, business_id, first_name, last_name, phone, notes)
   values
-    (client_maria_id, demo_business_id, 'María López', '+34600111222', null),
-    (client_carlos_id, demo_business_id, 'Carlos Pérez', '+34600333444', null),
-    (client_laura_id, demo_business_id, 'Laura Gómez', '+34600555666', null)
+    (client_maria_id, demo_business_id, 'María', 'López', '+34600111222', null),
+    (client_carlos_id, demo_business_id, 'Carlos', 'Pérez', '+34600333444', null),
+    (client_laura_id, demo_business_id, 'Laura', 'Gómez', '+34600555666', null)
   on conflict (id) do nothing;
 
   insert into public.appointments (

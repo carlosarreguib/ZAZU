@@ -14,12 +14,14 @@ import { updateClient, type ClientFormState } from "@/app/dashboard/clientes/act
 
 export function EditClientDialog({
   clientId,
-  fullName,
+  firstName,
+  lastName,
   phone,
   notes,
 }: {
   clientId: string;
-  fullName: string;
+  firstName: string;
+  lastName: string | null;
   phone: string;
   notes: string | null;
 }) {
@@ -41,7 +43,7 @@ export function EditClientDialog({
         </DialogHeader>
         <ClientForm
           action={boundAction}
-          defaultValues={{ fullName, phone, notes }}
+          defaultValues={{ firstName, lastName, phone, notes }}
           submitLabel="Guardar cambios"
           onCancel={() => setOpen(false)}
         />

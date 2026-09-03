@@ -20,7 +20,8 @@ export const MVP_APPOINTMENT_STATUSES = [
 ] as const;
 
 export const newClientForAppointmentSchema = z.object({
-  fullName: z.string().trim().min(1, "Introduce el nombre del cliente"),
+  firstName: z.string().trim().min(1, "Introduce el nombre del cliente"),
+  lastName: z.string().trim().optional(),
   phone: z.string().trim().min(1, "Introduce el teléfono del cliente"),
 });
 

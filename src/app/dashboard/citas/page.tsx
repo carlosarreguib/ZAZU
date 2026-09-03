@@ -1,5 +1,6 @@
 import { formatInTimeZone } from "date-fns-tz";
 import { requireBusiness } from "@/lib/auth/session";
+import { formatClientName } from "@/lib/clients/name";
 import { NewAppointmentDialog } from "@/components/appointments/new-appointment-dialog";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
 import { AppointmentsCalendar } from "@/components/appointments/appointments-calendar";
@@ -26,7 +27,7 @@ export default async function CitasPage() {
       supabase
         .from("appointments")
         .select(
-          "id, starts_at, status, clients(full_name), services(name, duration_minutes)",
+          "id, starts_at, status, clients(first_name, last_name), services(name, duration_minutes)",
         )
         .eq("business_id", businessId)
         .gte("starts_at", now.toISOString())
@@ -35,7 +36,7 @@ export default async function CitasPage() {
       supabase
         .from("appointments")
         .select(
-          "id, starts_at, status, clients(full_name), services(name, duration_minutes), appointment_reminders(status)",
+          "id, starts_at, status, clients(first_name, last_name), services(name, duration_minutes), appointment_reminders(status)",
         )
         .eq("business_id", businessId)
         .gte("starts_at", calendarStart)
@@ -44,9 +45,9 @@ export default async function CitasPage() {
         .order("starts_at"),
       supabase
         .from("clients")
-        .select("id, full_name, phone")
+        .select("id, first_name, last_name, phone")
         .eq("business_id", businessId)
-        .order("full_name"),
+        .order("first_name"),
       supabase
         .from("services")
         .select("id, name, duration_minutes")
@@ -57,7 +58,8 @@ export default async function CitasPage() {
 
   const clientOptions = (clients ?? []).map((c) => ({
     id: c.id,
-    fullName: c.full_name,
+    firstName: c.first_name,
+    lastName: c.last_name,
     phone: c.phone,
   }));
   const serviceOptions = (services ?? []).map((s) => ({
@@ -72,7 +74,9 @@ export default async function CitasPage() {
     const item: DayAppointmentItem = {
       id: appt.id,
       startsAt: appt.starts_at,
-      clientName: appt.clients?.full_name ?? "Cliente",
+      clientName: appt.clients
+        ? formatClientName(appt.clients.first_name, appt.clients.last_name)
+        : "Cliente",
       serviceName: appt.services?.name ?? null,
       durationMinutes: appt.services?.duration_minutes ?? null,
       status: appt.status,
@@ -113,7 +117,11 @@ export default async function CitasPage() {
                   key={appt.id}
                   id={appt.id}
                   startsAt={appt.starts_at}
-                  clientName={appt.clients?.full_name ?? "Cliente"}
+                  clientName={
+                    appt.clients
+                      ? formatClientName(appt.clients.first_name, appt.clients.last_name)
+                      : "Cliente"
+                  }
                   serviceName={appt.services?.name ?? null}
                   durationMinutes={appt.services?.duration_minutes ?? null}
                   status={appt.status}

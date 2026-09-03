@@ -97,7 +97,8 @@ export interface Database {
         Row: {
           id: string;
           business_id: string;
-          full_name: string;
+          first_name: string;
+          last_name: string | null;
           phone: string;
           notes: string | null;
           created_at: string;
@@ -106,12 +107,14 @@ export interface Database {
         Insert: {
           id?: string;
           business_id: string;
-          full_name: string;
+          first_name: string;
+          last_name?: string | null;
           phone: string;
           notes?: string | null;
         };
         Update: {
-          full_name?: string;
+          first_name?: string;
+          last_name?: string | null;
           phone?: string;
           notes?: string | null;
         };

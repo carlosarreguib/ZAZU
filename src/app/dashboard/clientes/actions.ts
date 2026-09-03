@@ -5,10 +5,11 @@ import { redirect } from "next/navigation";
 import { requireBusiness } from "@/lib/auth/session";
 import { normalizeSpanishPhone } from "@/lib/whatsapp/phone";
 import { clientSchema } from "@/lib/validations/client";
+import { formatClientName } from "@/lib/clients/name";
 
 export type ClientFormState = {
   error?: string;
-  fieldErrors?: Partial<Record<"fullName" | "phone" | "notes", string>>;
+  fieldErrors?: Partial<Record<"firstName" | "lastName" | "phone" | "notes", string>>;
   duplicateClientId?: string;
 };
 
@@ -26,7 +27,7 @@ async function findDuplicateByPhone(
 
   let query = supabase
     .from("clients")
-    .select("id, full_name, phone")
+    .select("id, first_name, last_name, phone")
     .eq("business_id", businessId);
 
   if (excludeClientId) {
@@ -45,7 +46,8 @@ export async function createClient(
   formData: FormData,
 ): Promise<ClientFormState> {
   const parsed = clientSchema.safeParse({
-    fullName: formData.get("fullName"),
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName") || undefined,
     phone: formData.get("phone"),
     notes: formData.get("notes") || undefined,
   });
@@ -54,7 +56,8 @@ export async function createClient(
     const fieldErrors = parsed.error.flatten().fieldErrors;
     return {
       fieldErrors: {
-        fullName: fieldErrors.fullName?.[0],
+        firstName: fieldErrors.firstName?.[0],
+        lastName: fieldErrors.lastName?.[0],
         phone: fieldErrors.phone?.[0],
         notes: fieldErrors.notes?.[0],
       },
@@ -62,7 +65,7 @@ export async function createClient(
   }
 
   const { supabase, businessId } = await requireBusiness();
-  const { fullName, phone, notes } = parsed.data;
+  const { firstName, lastName, phone, notes } = parsed.data;
 
   const forceCreate = formData.get("forceCreate") === "1";
 
@@ -70,7 +73,7 @@ export async function createClient(
     const duplicate = await findDuplicateByPhone(supabase, businessId, phone);
     if (duplicate) {
       return {
-        error: `Ya existe un cliente con ese teléfono: ${duplicate.full_name}.`,
+        error: `Ya existe un cliente con ese teléfono: ${formatClientName(duplicate.first_name, duplicate.last_name)}.`,
         duplicateClientId: duplicate.id,
       };
     }
@@ -78,7 +81,8 @@ export async function createClient(
 
   const { error } = await supabase.from("clients").insert({
     business_id: businessId,
-    full_name: fullName,
+    first_name: firstName,
+    last_name: lastName || null,
     phone,
     notes: notes || null,
   });
@@ -97,7 +101,8 @@ export async function updateClient(
   formData: FormData,
 ): Promise<ClientFormState> {
   const parsed = clientSchema.safeParse({
-    fullName: formData.get("fullName"),
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName") || undefined,
     phone: formData.get("phone"),
     notes: formData.get("notes") || undefined,
   });
@@ -106,7 +111,8 @@ export async function updateClient(
     const fieldErrors = parsed.error.flatten().fieldErrors;
     return {
       fieldErrors: {
-        fullName: fieldErrors.fullName?.[0],
+        firstName: fieldErrors.firstName?.[0],
+        lastName: fieldErrors.lastName?.[0],
         phone: fieldErrors.phone?.[0],
         notes: fieldErrors.notes?.[0],
       },
@@ -114,7 +120,7 @@ export async function updateClient(
   }
 
   const { supabase, businessId } = await requireBusiness();
-  const { fullName, phone, notes } = parsed.data;
+  const { firstName, lastName, phone, notes } = parsed.data;
 
   const duplicate = await findDuplicateByPhone(
     supabase,
@@ -124,14 +130,14 @@ export async function updateClient(
   );
   if (duplicate) {
     return {
-      error: `Ya existe otro cliente con ese teléfono: ${duplicate.full_name}.`,
+      error: `Ya existe otro cliente con ese teléfono: ${formatClientName(duplicate.first_name, duplicate.last_name)}.`,
       duplicateClientId: duplicate.id,
     };
   }
 
   const { error } = await supabase
     .from("clients")
-    .update({ full_name: fullName, phone, notes: notes || null })
+    .update({ first_name: firstName, last_name: lastName || null, phone, notes: notes || null })
     .eq("id", clientId)
     .eq("business_id", businessId);
 
@@ -157,11 +163,12 @@ export type CreateClientInlineResult = {
  * que el formulario de la cita pueda seleccionarlo sin salir del modal.
  */
 export async function createClientInline(
-  fullName: string,
+  firstName: string,
+  lastName: string | undefined,
   phone: string,
   forceCreate = false,
 ): Promise<CreateClientInlineResult> {
-  const parsed = clientSchema.safeParse({ fullName, phone });
+  const parsed = clientSchema.safeParse({ firstName, lastName, phone });
   if (!parsed.success) {
     return { error: "Nombre o teléfono no válidos." };
   }
@@ -176,9 +183,9 @@ export async function createClientInline(
     );
     if (duplicate) {
       return {
-        error: `Ya existe un cliente con ese teléfono: ${duplicate.full_name}.`,
+        error: `Ya existe un cliente con ese teléfono: ${formatClientName(duplicate.first_name, duplicate.last_name)}.`,
         duplicateClientId: duplicate.id,
-        duplicateClientName: duplicate.full_name,
+        duplicateClientName: formatClientName(duplicate.first_name, duplicate.last_name),
       };
     }
   }
@@ -187,7 +194,8 @@ export async function createClientInline(
     .from("clients")
     .insert({
       business_id: businessId,
-      full_name: parsed.data.fullName,
+      first_name: parsed.data.firstName,
+      last_name: parsed.data.lastName || null,
       phone: parsed.data.phone,
     })
     .select("id")

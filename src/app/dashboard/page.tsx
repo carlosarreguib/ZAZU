@@ -6,6 +6,7 @@ import { ReminderFlow } from "@/components/whatsapp/reminder-flow";
 import { requireBusiness } from "@/lib/auth/session";
 import { dayRangeUtc } from "@/lib/dates/ranges";
 import { formatDateLong } from "@/lib/dates/format";
+import { formatClientName } from "@/lib/clients/name";
 
 async function loadDayAppointments(
   supabase: Awaited<ReturnType<typeof requireBusiness>>["supabase"],
@@ -16,7 +17,7 @@ async function loadDayAppointments(
   const { data } = await supabase
     .from("appointments")
     .select(
-      "id, starts_at, status, clients(full_name), services(name, duration_minutes), appointment_reminders(status)",
+      "id, starts_at, status, clients(first_name, last_name), services(name, duration_minutes), appointment_reminders(status)",
     )
     .eq("business_id", businessId)
     .gte("starts_at", startIso)
@@ -27,7 +28,9 @@ async function loadDayAppointments(
   return (data ?? []).map((appt) => ({
     id: appt.id,
     startsAt: appt.starts_at,
-    clientName: appt.clients?.full_name ?? "Cliente",
+    clientName: appt.clients
+      ? formatClientName(appt.clients.first_name, appt.clients.last_name)
+      : "Cliente",
     serviceName: appt.services?.name ?? null,
     durationMinutes: appt.services?.duration_minutes ?? null,
     status: appt.status,
@@ -59,9 +62,9 @@ export default async function DashboardPage({
   const [{ data: clients }, { data: services }] = await Promise.all([
     supabase
       .from("clients")
-      .select("id, full_name, phone")
+      .select("id, first_name, last_name, phone")
       .eq("business_id", businessId)
-      .order("full_name"),
+      .order("first_name"),
     supabase
       .from("services")
       .select("id, name, duration_minutes")
@@ -72,7 +75,8 @@ export default async function DashboardPage({
 
   const clientOptions = (clients ?? []).map((c) => ({
     id: c.id,
-    fullName: c.full_name,
+    firstName: c.first_name,
+    lastName: c.last_name,
     phone: c.phone,
   }));
   const serviceOptions = (services ?? []).map((s) => ({

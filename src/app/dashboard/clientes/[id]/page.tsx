@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireBusiness } from "@/lib/auth/session";
 import { formatDateTime } from "@/lib/dates/format";
+import { formatClientName } from "@/lib/clients/name";
 import { EditClientDialog } from "@/components/clients/edit-client-dialog";
 import { DeleteClientButton } from "@/components/clients/delete-client-button";
 
@@ -15,7 +16,7 @@ export default async function ClienteDetailPage({
 
   const { data: client } = await supabase
     .from("clients")
-    .select("id, full_name, phone, notes")
+    .select("id, first_name, last_name, phone, notes")
     .eq("id", id)
     .eq("business_id", businessId)
     .maybeSingle();
@@ -47,7 +48,9 @@ export default async function ClienteDetailPage({
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">{client.full_name}</h1>
+          <h1 className="text-2xl font-semibold">
+            {formatClientName(client.first_name, client.last_name)}
+          </h1>
           <p className="text-muted-foreground">{client.phone}</p>
           {client.notes ? (
             <p className="mt-2 max-w-prose text-sm text-muted-foreground">
@@ -58,7 +61,8 @@ export default async function ClienteDetailPage({
         <div className="flex gap-2">
           <EditClientDialog
             clientId={client.id}
-            fullName={client.full_name}
+            firstName={client.first_name}
+            lastName={client.last_name}
             phone={client.phone}
             notes={client.notes}
           />

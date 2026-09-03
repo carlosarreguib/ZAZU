@@ -20,7 +20,12 @@ export function ClientForm({
     state: ClientFormState,
     formData: FormData,
   ) => Promise<ClientFormState>;
-  defaultValues?: { fullName?: string; phone?: string; notes?: string | null };
+  defaultValues?: {
+    firstName?: string;
+    lastName?: string | null;
+    phone?: string;
+    notes?: string | null;
+  };
   submitLabel: string;
   onCancel?: () => void;
 }) {
@@ -29,16 +34,29 @@ export function ClientForm({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label htmlFor="fullName">Nombre</Label>
+        <Label htmlFor="firstName">Nombre</Label>
         <Input
-          id="fullName"
-          name="fullName"
-          defaultValue={defaultValues?.fullName}
+          id="firstName"
+          name="firstName"
+          defaultValue={defaultValues?.firstName}
           required
-          aria-invalid={Boolean(state.fieldErrors?.fullName)}
+          aria-invalid={Boolean(state.fieldErrors?.firstName)}
         />
-        {state.fieldErrors?.fullName ? (
-          <p className="text-sm text-destructive">{state.fieldErrors.fullName}</p>
+        {state.fieldErrors?.firstName ? (
+          <p className="text-sm text-destructive">{state.fieldErrors.firstName}</p>
+        ) : null}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="lastName">Apellido (opcional)</Label>
+        <Input
+          id="lastName"
+          name="lastName"
+          defaultValue={defaultValues?.lastName ?? undefined}
+          aria-invalid={Boolean(state.fieldErrors?.lastName)}
+        />
+        {state.fieldErrors?.lastName ? (
+          <p className="text-sm text-destructive">{state.fieldErrors.lastName}</p>
         ) : null}
       </div>
 

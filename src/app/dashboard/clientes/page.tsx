@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireBusiness } from "@/lib/auth/session";
 import { formatDateTime } from "@/lib/dates/format";
+import { formatClientName } from "@/lib/clients/name";
 import { ClientSearch } from "@/components/clients/client-search";
 import { NewClientDialog } from "@/components/clients/new-client-dialog";
 import { EmptyState } from "@/components/dashboard/empty-state";
@@ -21,12 +22,14 @@ export default async function ClientesPage({
 
   let query = supabase
     .from("clients")
-    .select("id, full_name, phone")
+    .select("id, first_name, last_name, phone")
     .eq("business_id", businessId)
-    .order("full_name");
+    .order("first_name");
 
   if (q) {
-    query = query.or(`full_name.ilike.%${q}%,phone.ilike.%${q}%`);
+    query = query.or(
+      `first_name.ilike.%${q}%,last_name.ilike.%${q}%,phone.ilike.%${q}%`,
+    );
   }
 
   const { data: clients } = await query;
@@ -98,7 +101,7 @@ export default async function ClientesPage({
                         href={`/dashboard/clientes/${client.id}`}
                         className="font-medium underline-offset-4 hover:underline"
                       >
-                        {client.full_name}
+                        {formatClientName(client.first_name, client.last_name)}
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">

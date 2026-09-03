@@ -4,6 +4,7 @@ import { requireBusiness } from "@/lib/auth/session";
 import { renderReminderMessage } from "@/lib/whatsapp/message";
 import { buildWhatsAppUrl } from "@/lib/whatsapp/url";
 import { formatDate, formatTime } from "@/lib/dates/format";
+import { formatClientName } from "@/lib/clients/name";
 
 export type ReminderUrlResult = {
   error?: string;
@@ -25,7 +26,7 @@ export async function buildReminderUrlForAppointment(
 
   const { data: appointment } = await supabase
     .from("appointments")
-    .select("starts_at, clients(full_name, phone), services(name)")
+    .select("starts_at, clients(first_name, last_name, phone), services(name)")
     .eq("id", appointmentId)
     .eq("business_id", businessId)
     .maybeSingle();
@@ -45,7 +46,7 @@ export async function buildReminderUrlForAppointment(
     "Hola {{client_name}}, te recordamos tu cita de {{service}} el {{date}} a las {{time}} en {{business_name}}. ¡Te esperamos!";
 
   const message = renderReminderMessage(template, {
-    clientName: appointment.clients.full_name,
+    clientName: appointment.clients.first_name,
     service: appointment.services?.name ?? "tu cita",
     date: formatDate(appointment.starts_at, timezone),
     time: formatTime(appointment.starts_at, timezone),
@@ -54,5 +55,8 @@ export async function buildReminderUrlForAppointment(
 
   const url = buildWhatsAppUrl(appointment.clients.phone, message);
 
-  return { url, clientName: appointment.clients.full_name };
+  return {
+    url,
+    clientName: formatClientName(appointment.clients.first_name, appointment.clients.last_name),
+  };
 }

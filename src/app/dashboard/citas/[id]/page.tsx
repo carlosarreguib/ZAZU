@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 import { requireBusiness } from "@/lib/auth/session";
 import { formatDateLong, formatTime } from "@/lib/dates/format";
+import { formatClientName } from "@/lib/clients/name";
 import { EditAppointmentDialog } from "@/components/appointments/edit-appointment-dialog";
 import { AppointmentStatusSelect } from "@/components/appointments/appointment-status-select";
 
@@ -17,7 +18,7 @@ export default async function CitaDetailPage({
   const { data: appointment } = await supabase
     .from("appointments")
     .select(
-      "id, starts_at, ends_at, status, notes, client_id, service_id, clients(id, full_name, phone), services(id, name, duration_minutes)",
+      "id, starts_at, ends_at, status, notes, client_id, service_id, clients(id, first_name, last_name, phone), services(id, name, duration_minutes)",
     )
     .eq("id", id)
     .eq("business_id", businessId)
@@ -30,9 +31,9 @@ export default async function CitaDetailPage({
   const [{ data: clients }, { data: services }] = await Promise.all([
     supabase
       .from("clients")
-      .select("id, full_name, phone")
+      .select("id, first_name, last_name, phone")
       .eq("business_id", businessId)
-      .order("full_name"),
+      .order("first_name"),
     supabase
       .from("services")
       .select("id, name, duration_minutes")
@@ -52,7 +53,9 @@ export default async function CitaDetailPage({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">
-            {appointment.clients?.full_name ?? "Cliente"}
+            {appointment.clients
+              ? formatClientName(appointment.clients.first_name, appointment.clients.last_name)
+              : "Cliente"}
           </h1>
           <p className="text-muted-foreground">
             {formatDateLong(appointment.starts_at, timezone)} ·{" "}
@@ -76,7 +79,8 @@ export default async function CitaDetailPage({
             appointmentId={appointment.id}
             clients={(clients ?? []).map((c) => ({
               id: c.id,
-              fullName: c.full_name,
+              firstName: c.first_name,
+              lastName: c.last_name,
               phone: c.phone,
             }))}
             services={(services ?? []).map((s) => ({

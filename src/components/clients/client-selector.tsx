@@ -11,8 +11,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { createClientInline } from "@/app/dashboard/clientes/actions";
+import { formatClientName } from "@/lib/clients/name";
 
-export type ClientOption = { id: string; fullName: string; phone: string };
+export type ClientOption = {
+  id: string;
+  firstName: string;
+  lastName: string | null;
+  phone: string;
+};
 
 export function ClientSelector({
   clients,
@@ -26,7 +32,8 @@ export function ClientSelector({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
-  const [newName, setNewName] = useState("");
+  const [newFirstName, setNewFirstName] = useState("");
+  const [newLastName, setNewLastName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<{
@@ -42,7 +49,9 @@ export function ClientSelector({
     if (!search.trim()) return localClients;
     const q = search.trim().toLowerCase();
     return localClients.filter(
-      (c) => c.fullName.toLowerCase().includes(q) || c.phone.includes(q),
+      (c) =>
+        formatClientName(c.firstName, c.lastName).toLowerCase().includes(q) ||
+        c.phone.includes(q),
     );
   }, [localClients, search]);
 
@@ -50,7 +59,12 @@ export function ClientSelector({
     setError(null);
     setDuplicate(null);
     setIsPending(true);
-    const result = await createClientInline(newName, newPhone, forceCreate);
+    const result = await createClientInline(
+      newFirstName,
+      newLastName || undefined,
+      newPhone,
+      forceCreate,
+    );
     setIsPending(false);
 
     if (result.error) {
@@ -64,13 +78,15 @@ export function ClientSelector({
     if (result.clientId) {
       const created = {
         id: result.clientId,
-        fullName: newName.trim(),
+        firstName: newFirstName.trim(),
+        lastName: newLastName.trim() || null,
         phone: newPhone.trim(),
       };
       setLocalClients((prev) => [...prev, created]);
       onChange(result.clientId);
       setCreating(false);
-      setNewName("");
+      setNewFirstName("");
+      setNewLastName("");
       setNewPhone("");
       setOpen(false);
     }
@@ -84,7 +100,9 @@ export function ClientSelector({
           variant="outline"
           className="w-full justify-start font-normal"
         >
-          {selected ? `${selected.fullName} · ${selected.phone}` : "Selecciona un cliente"}
+          {selected
+            ? `${formatClientName(selected.firstName, selected.lastName)} · ${selected.phone}`
+            : "Selecciona un cliente"}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="start">
@@ -114,7 +132,9 @@ export function ClientSelector({
                       setOpen(false);
                     }}
                   >
-                    <span className="font-medium">{client.fullName}</span>
+                    <span className="font-medium">
+                      {formatClientName(client.firstName, client.lastName)}
+                    </span>
                     <span className="text-xs text-muted-foreground">
                       {client.phone}
                     </span>
@@ -129,7 +149,7 @@ export function ClientSelector({
                 className="w-full justify-start"
                 onClick={() => {
                   setCreating(true);
-                  setNewName(search);
+                  setNewFirstName(search);
                 }}
               >
                 <Plus className="size-4" aria-hidden="true" />
@@ -144,9 +164,17 @@ export function ClientSelector({
               <Label htmlFor="new-client-name">Nombre</Label>
               <Input
                 id="new-client-name"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
+                value={newFirstName}
+                onChange={(e) => setNewFirstName(e.target.value)}
                 autoFocus
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="new-client-lastname">Apellido (opcional)</Label>
+              <Input
+                id="new-client-lastname"
+                value={newLastName}
+                onChange={(e) => setNewLastName(e.target.value)}
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -193,7 +221,7 @@ export function ClientSelector({
               <Button
                 type="button"
                 className="flex-1"
-                disabled={!newName.trim() || !newPhone.trim() || isPending}
+                disabled={!newFirstName.trim() || !newPhone.trim() || isPending}
                 onClick={() => handleCreate(false)}
               >
                 {isPending ? "Creando..." : "Crear"}
