@@ -113,7 +113,10 @@ export default function Home() {
           <div className="mx-auto flex w-full max-w-md flex-col items-center gap-4">
             <h2 className="text-2xl font-semibold tracking-tight">Precio</h2>
             <p className="text-3xl font-semibold">
-              Próximamente desde 9,90 €<span className="text-lg font-normal text-muted-foreground">/mes</span>
+              Próximamente desde{" "}
+              <span className="whitespace-nowrap">
+                9,90 €<span className="text-lg font-normal text-muted-foreground">/mes</span>
+              </span>
             </p>
             <p className="text-sm text-muted-foreground">
               Sin permanencia. Sin sorpresas.
