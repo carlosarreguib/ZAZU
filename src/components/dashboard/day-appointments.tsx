@@ -1,7 +1,4 @@
-import Link from "next/link";
-import { formatTime } from "@/lib/dates/format";
-import { APPOINTMENT_STATUS_LABELS } from "@/lib/validations/appointment";
-import { WhatsAppReminderButton } from "@/components/whatsapp/whatsapp-reminder-button";
+import { AppointmentListItem } from "@/components/appointments/appointment-list-item";
 
 export type DayAppointmentItem = {
   id: string;
@@ -29,35 +26,7 @@ export function DayAppointments({
   return (
     <ul className="flex flex-col gap-2">
       {appointments.map((appt) => (
-        <li
-          key={appt.id}
-          className="flex flex-col gap-3 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div className="flex items-baseline gap-3">
-            <span className="text-lg font-semibold tabular-nums">
-              {formatTime(appt.startsAt, timezone)}
-            </span>
-            <div>
-              <Link
-                href={`/dashboard/citas/${appt.id}`}
-                className="font-medium underline-offset-4 hover:underline"
-              >
-                {appt.clientName}
-              </Link>
-              <p className="text-sm text-muted-foreground">
-                {appt.serviceName ?? "Sin servicio"}
-                {appt.durationMinutes ? ` · ${appt.durationMinutes} min` : ""}
-                {" · "}
-                {APPOINTMENT_STATUS_LABELS[appt.status] ?? appt.status}
-              </p>
-            </div>
-          </div>
-
-          <WhatsAppReminderButton
-            appointmentId={appt.id}
-            alreadySent={appt.reminderStatus === "sent"}
-          />
-        </li>
+        <AppointmentListItem key={appt.id} appointment={appt} timezone={timezone} />
       ))}
     </ul>
   );
