@@ -22,7 +22,7 @@ export default async function CitasPage() {
   const calendarStart = new Date(now.getFullYear(), now.getMonth() - 2, 1).toISOString();
   const calendarEnd = new Date(now.getFullYear(), now.getMonth() + 4, 0).toISOString();
 
-  const [{ data: upcoming }, { data: calendarAppointments }, { data: clients }, { data: services }] =
+  const [{ data: upcoming }, { data: calendarAppointments }, { data: clients }, { data: services }, { data: hoursRows }] =
     await Promise.all([
       supabase
         .from("appointments")
@@ -54,6 +54,10 @@ export default async function CitasPage() {
         .eq("business_id", businessId)
         .eq("active", true)
         .order("name"),
+      supabase
+        .from("business_hours")
+        .select("day_of_week, is_open, starts_at, ends_at")
+        .eq("business_id", businessId),
     ]);
 
   const clientOptions = (clients ?? []).map((c) => ({
@@ -83,6 +87,15 @@ export default async function CitasPage() {
       reminderStatus: appt.appointment_reminders?.[0]?.status ?? null,
     };
     (appointmentsByDate[dateKey] ??= []).push(item);
+  }
+
+  const hoursByDayOfWeek: Record<number, { isOpen: boolean; startsAt: string | null; endsAt: string | null }> = {};
+  for (const row of hoursRows ?? []) {
+    hoursByDayOfWeek[row.day_of_week] = {
+      isOpen: row.is_open,
+      startsAt: row.starts_at,
+      endsAt: row.ends_at,
+    };
   }
 
   return (
@@ -136,6 +149,7 @@ export default async function CitasPage() {
           <AppointmentsCalendar
             appointmentsByDate={appointmentsByDate}
             timezone={timezone}
+            hoursByDayOfWeek={hoursByDayOfWeek}
           />
         </TabsContent>
       </Tabs>
