@@ -6,6 +6,7 @@ import {
   businessSettingsSchema,
   reminderTemplateSchema,
 } from "@/lib/validations/business";
+import { businessHoursSchema } from "@/lib/validations/business-hours";
 
 export type BusinessSettingsFormState = {
   error?: string;
@@ -86,5 +87,61 @@ export async function updateReminderTemplate(
   }
 
   revalidatePath("/dashboard/configuracion");
+  return { success: true };
+}
+
+export type BusinessHoursFormState = {
+  error?: string;
+  fieldErrors?: Record<number, { startsAt?: string; endsAt?: string }>;
+  success?: boolean;
+};
+
+export async function updateBusinessHours(
+  _prevState: BusinessHoursFormState,
+  formData: FormData,
+): Promise<BusinessHoursFormState> {
+  const raw = formData.get("days");
+  let parsedJson: unknown;
+  try {
+    parsedJson = JSON.parse(String(raw ?? "[]"));
+  } catch {
+    return { error: "Formato de horario no válido." };
+  }
+
+  const parsed = businessHoursSchema.safeParse({ days: parsedJson });
+
+  if (!parsed.success) {
+    const fieldErrors: Record<number, { startsAt?: string; endsAt?: string }> = {};
+    for (const issue of parsed.error.issues) {
+      const dayIndex = issue.path[1];
+      const field = issue.path[2];
+      if (typeof dayIndex !== "number") continue;
+      fieldErrors[dayIndex] ??= {};
+      if (field === "startsAt") fieldErrors[dayIndex].startsAt = issue.message;
+      if (field === "endsAt") fieldErrors[dayIndex].endsAt = issue.message;
+    }
+    return { fieldErrors, error: "Revisa los horarios marcados." };
+  }
+
+  const { supabase, businessId } = await requireBusiness();
+
+  const rows = parsed.data.days.map((day) => ({
+    business_id: businessId,
+    day_of_week: day.dayOfWeek,
+    is_open: day.isOpen,
+    starts_at: day.isOpen ? day.startsAt : null,
+    ends_at: day.isOpen ? day.endsAt : null,
+  }));
+
+  const { error } = await supabase
+    .from("business_hours")
+    .upsert(rows, { onConflict: "business_id,day_of_week" });
+
+  if (error) {
+    return { error: "No se pudo guardar el horario. Inténtalo de nuevo." };
+  }
+
+  revalidatePath("/dashboard/configuracion");
+  revalidatePath("/dashboard/citas");
   return { success: true };
 }
