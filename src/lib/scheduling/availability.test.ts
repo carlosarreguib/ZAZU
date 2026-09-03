@@ -18,7 +18,7 @@ function appt(overrides: Partial<DayAppointmentItem> & { startsAt: string; endsA
 }
 
 describe("computeDayAvailability", () => {
-  it("devuelve [] si el día está cerrado", () => {
+  it("devuelve [] si el día está cerrado y no hay citas", () => {
     const result = computeDayAvailability({
       dateStr: DATE,
       timezone: TIMEZONE,
@@ -28,7 +28,7 @@ describe("computeDayAvailability", () => {
     expect(result).toEqual([]);
   });
 
-  it("devuelve [] si no hay fila de horario para ese día", () => {
+  it("devuelve [] si no hay fila de horario para ese día y no hay citas", () => {
     const result = computeDayAvailability({
       dateStr: DATE,
       timezone: TIMEZONE,
@@ -36,6 +36,51 @@ describe("computeDayAvailability", () => {
       appointments: [],
     });
     expect(result).toEqual([]);
+  });
+
+  it("un día cerrado con una cita existente sigue mostrando esa cita como ocupada, sin bloques libres", () => {
+    const busyAppt = appt({
+      id: "appt-closed-day",
+      startsAt: "2026-09-03T09:00:00.000Z", // 11:00 local
+    });
+    const result = computeDayAvailability({
+      dateStr: DATE,
+      timezone: TIMEZONE,
+      hours: { isOpen: false, startsAt: null, endsAt: null },
+      appointments: [busyAppt],
+    });
+
+    expect(result).toEqual([
+      {
+        type: "busy",
+        startsAt: "2026-09-03T09:00:00.000Z",
+        endsAt: "2026-09-03T09:30:00.000Z",
+        appointment: busyAppt,
+      },
+    ] satisfies AvailabilityBlock[]);
+  });
+
+  it("una cita fuera del horario laboral (día abierto) sigue mostrándose como ocupada con su horario real", () => {
+    const busyAppt = appt({
+      id: "appt-outside-hours",
+      startsAt: "2026-09-03T17:00:00.000Z", // 19:00 local, tras el cierre a las 18:00
+    });
+    const result = computeDayAvailability({
+      dateStr: DATE,
+      timezone: TIMEZONE,
+      hours: { isOpen: true, startsAt: "09:00", endsAt: "18:00" },
+      appointments: [busyAppt],
+    });
+
+    expect(result).toEqual([
+      { type: "free", startsAt: "2026-09-03T07:00:00.000Z", endsAt: "2026-09-03T16:00:00.000Z" },
+      {
+        type: "busy",
+        startsAt: "2026-09-03T17:00:00.000Z",
+        endsAt: "2026-09-03T17:30:00.000Z",
+        appointment: busyAppt,
+      },
+    ] satisfies AvailabilityBlock[]);
   });
 
   it("un día abierto sin citas es un único bloque libre de horario completo", () => {
@@ -74,14 +119,10 @@ describe("computeDayAvailability", () => {
     ] satisfies AvailabilityBlock[]);
   });
 
-  it("una cita que empieza antes del horario laboral se recorta al inicio del horario", () => {
+  it("una cita que empieza antes del horario laboral se muestra con su horario real, sin recortar", () => {
     const busyAppt = appt({
       id: "appt-early",
       // 08:45 local (30 min de duración -> termina 09:15 local), a caballo de la apertura a las 09:00.
-      // Nota: la redacción original del brief usaba 06:00Z/30min, que no llega a solaparse con la
-      // apertura (termina a las 08:30 local, antes de las 09:00). Se ajusta el startsAt para que la
-      // cita realmente cruce el límite de apertura y así el recorte al inicio del horario tenga efecto,
-      // que es el comportamiento que este test pretende validar.
       startsAt: "2026-09-03T06:45:00.000Z", // 08:45 local, antes de las 09:00 de apertura
     });
     const result = computeDayAvailability({
@@ -93,10 +134,12 @@ describe("computeDayAvailability", () => {
 
     expect(result[0]).toEqual({
       type: "busy",
-      startsAt: "2026-09-03T07:00:00.000Z", // recortado a las 09:00 local = 07:00 UTC
-      endsAt: "2026-09-03T07:15:00.000Z", // fin real de la cita (09:15 local), sin recorte porque cae dentro del horario
+      startsAt: "2026-09-03T06:45:00.000Z", // horario real de la cita (08:45 local), sin recortar al inicio del horario
+      endsAt: "2026-09-03T07:15:00.000Z", // fin real de la cita (09:15 local)
       appointment: busyAppt,
     });
+    // No debe generarse un bloque libre antes de una cita que ya empezó antes de la apertura.
+    expect(result.find((b) => b.type === "free" && b.startsAt < "2026-09-03T06:45:00.000Z")).toBeUndefined();
   });
 
   it("descarta huecos libres menores al tamaño de slot (30 min por defecto)", () => {

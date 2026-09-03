@@ -28,45 +28,57 @@ export function computeDayAvailability(params: {
 }): AvailabilityBlock[] {
   const { dateStr, timezone, hours, appointments, slotMinutes = 30 } = params;
 
+  const sorted = [...appointments].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+
+  // Las citas reales nunca se ocultan ni se recortan, sea cual sea la configuración
+  // de horario laboral (puede haber cambiado después de crear la cita, o no existir).
+  const busyBlocks: AvailabilityBlock[] = sorted.map((appointment) => {
+    const apptEnd = new Date(
+      new Date(appointment.startsAt).getTime() + (appointment.durationMinutes ?? 0) * 60_000,
+    ).toISOString();
+    return { type: "busy", startsAt: appointment.startsAt, endsAt: apptEnd, appointment };
+  });
+
   if (!hours || !hours.isOpen || !hours.startsAt || !hours.endsAt) {
-    return [];
+    // Sin horario laboral configurado (o día cerrado) no hay nada que ofrecer como
+    // libre, pero las citas reales del día siguen mostrándose.
+    return busyBlocks;
   }
 
   const workStart = localTimeToUtcIso(dateStr, toHhMm(hours.startsAt), timezone);
   const workEnd = localTimeToUtcIso(dateStr, toHhMm(hours.endsAt), timezone);
 
-  const sorted = [...appointments].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-
   const blocks: AvailabilityBlock[] = [];
   let cursor = workStart;
 
-  for (const appointment of sorted) {
-    const apptStart = appointment.startsAt;
-    const apptEnd = new Date(
-      new Date(appointment.startsAt).getTime() + (appointment.durationMinutes ?? 0) * 60_000,
-    ).toISOString();
+  for (const busy of busyBlocks) {
+    // Los huecos libres solo se calculan dentro de la ventana de horario laboral;
+    // una cita fuera de esa ventana no afecta al cálculo de libres pero sí se añade
+    // como bloque ocupado con su horario real.
+    const overlapsWindow = busy.endsAt > workStart && busy.startsAt < workEnd;
 
-    const clippedStart = apptStart < workStart ? workStart : apptStart;
-    const clippedEnd = apptEnd > workEnd ? workEnd : apptEnd;
-
-    if (clippedEnd <= cursor || clippedStart >= workEnd) {
-      // La cita cae fuera del rango restante (ya cubierta o después del cierre).
-      continue;
+    if (overlapsWindow) {
+      const gapMinutes = (new Date(busy.startsAt).getTime() - new Date(cursor).getTime()) / 60_000;
+      if (gapMinutes >= slotMinutes) {
+        blocks.push({ type: "free", startsAt: cursor, endsAt: busy.startsAt });
+      }
+      if (busy.endsAt > cursor) {
+        cursor = busy.endsAt;
+      }
     }
 
-    const gapMinutes = (new Date(clippedStart).getTime() - new Date(cursor).getTime()) / 60_000;
-    if (gapMinutes >= slotMinutes) {
-      blocks.push({ type: "free", startsAt: cursor, endsAt: clippedStart });
-    }
-
-    blocks.push({ type: "busy", startsAt: clippedStart, endsAt: clippedEnd, appointment });
-    cursor = clippedEnd > cursor ? clippedEnd : cursor;
+    blocks.push(busy);
   }
 
-  const tailMinutes = (new Date(workEnd).getTime() - new Date(cursor).getTime()) / 60_000;
+  const cursorClamped = cursor > workEnd ? workEnd : cursor;
+  const tailMinutes = (new Date(workEnd).getTime() - new Date(cursorClamped).getTime()) / 60_000;
   if (tailMinutes >= slotMinutes) {
-    blocks.push({ type: "free", startsAt: cursor, endsAt: workEnd });
+    blocks.push({ type: "free", startsAt: cursorClamped, endsAt: workEnd });
   }
+
+  // Reordenar cronológicamente: las citas fuera de la ventana laboral (o el bloque
+  // libre final) pueden haberse añadido sin quedar ya en orden respecto al resto.
+  blocks.sort((a, b) => a.startsAt.localeCompare(b.startsAt) || (a.type === "free" ? -1 : 1));
 
   return blocks;
 }
