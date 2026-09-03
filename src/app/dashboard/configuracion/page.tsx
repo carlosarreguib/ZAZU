@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { BusinessSettingsForm } from "@/components/settings/business-settings-form";
 import { ReminderTemplateForm } from "@/components/settings/reminder-template-form";
 import { DeleteAccountButton } from "@/components/settings/delete-account-button";
+import { WorkingHoursForm, type DayHoursValue } from "@/components/settings/working-hours-form";
 
 export const metadata = {
   title: "Configuración — Zazú",
@@ -22,6 +23,21 @@ export default async function ConfiguracionPage() {
     .eq("business_id", businessId)
     .maybeSingle();
 
+  const { data: hoursRows } = await supabase
+    .from("business_hours")
+    .select("day_of_week, is_open, starts_at, ends_at")
+    .eq("business_id", businessId);
+
+  const defaultDays: DayHoursValue[] = Array.from({ length: 7 }, (_, dayOfWeek) => {
+    const row = hoursRows?.find((r) => r.day_of_week === dayOfWeek);
+    return {
+      dayOfWeek,
+      isOpen: row?.is_open ?? false,
+      startsAt: row?.starts_at?.slice(0, 5) ?? "",
+      endsAt: row?.ends_at?.slice(0, 5) ?? "",
+    };
+  });
+
   return (
     <div className="flex max-w-2xl flex-col gap-10">
       <h1 className="text-2xl font-semibold">Configuración</h1>
@@ -35,6 +51,13 @@ export default async function ConfiguracionPage() {
             phone: business?.phone ?? null,
           }}
         />
+      </section>
+
+      <Separator />
+
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-medium">Horario laboral</h2>
+        <WorkingHoursForm defaultDays={defaultDays} />
       </section>
 
       <Separator />
