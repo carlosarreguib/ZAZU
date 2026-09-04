@@ -48,3 +48,6 @@ next-env.d.ts
 # supabase local
 /supabase/.branches
 /supabase/.temp
+
+# notas internas, no forman parte del código del proyecto
+/PLAN_FUTURO_STRIPE.md

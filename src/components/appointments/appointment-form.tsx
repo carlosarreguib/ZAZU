@@ -80,8 +80,8 @@ export function AppointmentForm({
         ) : null}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="date">Fecha</Label>
           <Input
             id="date"
@@ -89,13 +89,14 @@ export function AppointmentForm({
             type="date"
             defaultValue={defaultValues?.date}
             required
+            className="w-full min-w-0"
             aria-invalid={Boolean(state.fieldErrors?.date)}
           />
           {state.fieldErrors?.date ? (
             <p className="text-sm text-destructive">{state.fieldErrors.date}</p>
           ) : null}
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <Label htmlFor="time">Hora</Label>
           <Input
             id="time"
@@ -103,6 +104,7 @@ export function AppointmentForm({
             type="time"
             defaultValue={defaultValues?.time}
             required
+            className="w-full min-w-0"
             aria-invalid={Boolean(state.fieldErrors?.time)}
           />
           {state.fieldErrors?.time ? (

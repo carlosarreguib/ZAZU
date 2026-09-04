@@ -19,7 +19,7 @@ export function DashboardNav() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="flex justify-between gap-1 border-b bg-background px-1 py-1 md:flex-col md:justify-start md:border-b-0 md:border-r md:px-3 md:py-4"
+      className="sticky top-0 z-40 flex justify-between gap-1 border-b bg-background px-1 py-1 md:static md:flex-col md:justify-start md:border-b-0 md:border-r md:px-3 md:py-4"
     >
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
         const isActive =
